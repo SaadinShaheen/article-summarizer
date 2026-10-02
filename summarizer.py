@@ -1,32 +1,26 @@
 import string
+import textwrap #textwrap is used to format and wrap text mainly by controlling how long each line can be
+
 with open("myarticle.txt", "r", encoding = "utf-8") as f: 
      #Encoding tells Python how to convert bytes in a text file into readable characters.
     article = f.read() 
      #reads the entire content of the file and stores in variable article
-
-length=len(article)
-print(length)
 
 cleaned=article.replace("\n", " ")
  #replaces newline characters with spaces
 
 sentences=cleaned.split(". ") 
  #splits the article into sentences based on period followed by a space (not a perfect solution, but works for this example)
-print(len(sentences))
-
-for sentence in sentences:
-    print(sentence)
-    print("---")
 
 words=cleaned.lower().split() 
  #splits the article into words based on spaces and converts them into lowercase
 
 freq={}
-stopwords = ["the", "a", "an", "and", "or", 
+stopwords = {"the", "a", "an", "and", "or", 
              "but", "is", "are", "was", "were", 
              "to", "of", "in", "on","at", "for", 
              "with", "this", "that", "it", "as", 
-             "by","have", "has", "do", "does"]
+             "by","have", "has", "do", "does"}
 for w in words:
     w = w.strip(string.punctuation) 
      #removes punctuation from the beginning and end of each word
@@ -35,10 +29,9 @@ for w in words:
             freq[w]+=1
         else:
             freq[w]=1
-print(freq)
  
 sentence_scores=[]
-for s in sentences:
+for index, s in enumerate(sentences): # enumerate is used to loop through items while keeping track of thier position/number
     words_in_sentence = s.lower().split()
     score=0
     for w in words_in_sentence: 
@@ -50,13 +43,22 @@ for s in sentences:
          #calculates the avg score for the sentence by dividing the score by the length of words in the sentence
     else:
         avg_score = 0
-    sentence_scores.append((s, avg_score))
-sorted_sentences = sorted(sentence_scores, key=lambda x:x[1], reverse = True) 
+    sentence_scores.append((index, s, avg_score))
+sorted_by_score = sorted(sentence_scores, key=lambda x:x[2], reverse = True) 
  #sorts the sentences based on their avg score in the descending order
 
  # lambda is used to create a small, one line function without a name.
 
-top_3 = sorted_sentences[:3] 
- #gets the top 3 sentences with highest avg score
-for s, score in top_3:
-    print(round(score,2), "->",s)
+n = int(input("How many sentences do you want in the summary? "))
+top_n = sorted_by_score[:n] 
+ #gets the top n sentences with highest avg score
+
+top_n_in_order = sorted(top_n, key=lambda x:x[0])
+summary_para = " ".join(s.strip() + "." for index, s, score in top_n_in_order)
+print(f"\nArticle length: {len(words)} words\n")
+print("="*50)
+print(f" SUMMARY")
+print("="*50)
+print(textwrap.fill(summary_para, width=70))
+ # textwrap.fill() breaks the text into lines and returns it as one string, The width parameter specifies the maximum line length
+print("="*50)
