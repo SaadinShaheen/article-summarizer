@@ -1,18 +1,14 @@
 # Article Summarizer
 
-A little Python script that reads an article and spits out the 3 most important sentences as a summary. No AI, no external libraries — just plain word-counting logic.
+A simple extractive text summarizer written in Python. Give it an article, and it picks out the most important sentences to generate a short summary - no external APIs or machine learning models, just frequency based scoring built from scratch.
 
-I built this mostly to get back into coding after a while away from it, so it's intentionally simple. No ML, no APIs (yet) — just Python basics applied to something that actually does a real job.
+## How it works
 
-## How it works (the short version)
-
-1. Read the article from a `.txt` file
-2. Break it into sentences
-3. Count how often each word shows up, ignoring boring filler words like "the," "a," "and"
-4. Score each sentence based on how many "important" (frequent, non-filler) words it has
-5. Print the top 3 highest-scoring sentences
-
-That's it. It's extractive summarization — meaning it picks real sentences straight out of the article rather than generating new text like an AI model would.
+1. **Read the article** from a `.txt` file
+2. **Split it into sentences** (on `". "`, after normalizing paragraph breaks)
+3. **Count word frequency** across the whole article, ignoring common stopwords ("the", "a", "and" etc.) so the scoring reflects meaningful content rather than filler
+4. **Score each sentence** by the average frequency of its words - this rewards sentences that are dense with important terms, rather than just long sentences that repeat common words
+5. **Return the top-N highest scoring sentences**, in their original order, as the summary
 
 ## Example
 
@@ -24,30 +20,32 @@ During REM sleep, brain activity becomes more similar to waking activity, and vi
 Interestingly, people do not always remember their dreams
 ```
 
-## How to run it
+## Usage
 
-1. Put the article you want summarized into a file called `myarticle.txt`, same folder as `summarizer.py`
-2. Run:
+1. Save the article you want to summarize as `myarticle.txt` in the same folder as `summarizer.py`
+2. Run the script:
    ```
    python summarizer.py
    ```
-3. It prints the summary to the terminal
+3. The top 3 sentences print to the terminal as the summary
 
-## Bugs I ran into (and actually learned something from)
+## What I learned building this
 
-- My first scoring method just added up word frequencies per sentence — which meant **long sentences won by default**, even if they weren't actually the most important ones. Switched to averaging the score instead, which fixed it.
-- `"python"` and `"python."` were getting counted as two different words because of the trailing period. Had to strip punctuation before counting.
-- Splitting sentences on `". "` quietly merged sentences across paragraph breaks, because paragraph breaks are `.\n\n`, not `. `. Fixed by replacing newlines with spaces first.
-- Reading the `.txt` file without specifying UTF-8 encoding corrupted special characters (em-dashes turned into garbage symbols). Classic Windows default-encoding issue.
-- Filtering out filler words didn't just clean up the word list — it actually changed which sentences got picked as "most important." That one surprised me a little.
+This was a hands-on refresher project after some time away from coding, so a few things stood out while building it:
 
-## Ideas for later (not done yet)
+- **Length bias in naive scoring**: summing word frequencies per sentence unfairly favors longer sentences. Switching to an *average* score per word fixed this.
+- **Punctuation fragmenting word counts**:`"python"` and `"python."` were initially counted as different words until stripping punctuation before counting.
+- **Paragraph breaks merging sentences**: splitting on `". "` alone missed sentence boundaries across paragraph breaks (`".\n\n"`), which required normalizing newlines first.
+- **File encoding matters**: reading a `.txt` file without specifying `encoding="utf-8"` corrupted special characters like em-dashes in the source text.
+- **Stopwords meaningfully change results**: filtering out filler words didn't just clean up the word frequency dictionary - it changed which sentences actually ranked highest, since short, content dense sentences could now compete fairly against longer ones padded with common words.
 
-- Let the user choose how many sentences they want
-- Accept pasted text directly, not just `.txt` files
-- Try hooking this up to an actual LLM API and compare results against my own algorithm
-- Handle abbreviations ("U.S.", "e.g.") better, since right now they get mistaken for sentence endings
+## Possible next steps
 
-## Built with
+- Let the user choose the number of summary sentences
+- Accept pasted input directly, not just `.txt` files
+- Compare against an AI-generated summary (via an LLM API) as a stretch goal
+- Handle sentence splitting edge cases like abbreviations ("U.S.", "e.g.") more robustly
 
-Just Python's standard library (`string`). No pip installs needed.
+## Tech
+
+Pure Python standard library only (`string`, no third-party dependencies for the core version).
