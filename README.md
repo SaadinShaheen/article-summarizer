@@ -54,6 +54,7 @@ This project started as a Python refresher after some time away from coding, so 
 - **File encoding corrupting special characters**: reading without `encoding="utf-8"` mangled em-dashes in the source text.
 - **Stopword filtering changed which sentences got picked**, not just the word frequency dictionary; short, content-dense sentences could finally compete fairly against longer ones padded with filler words.
 - **Accidentally exposed an API key once** by pasting terminal output that included it. Revoked it immediately and regenerated; a good reminder that `.gitignore` -ing `.env` protects against *committing* a key, but not against pasting it somewhere by accident.
+- **No input validation on user prompts**: bad input (letters instead of numbers, out of range menu choices, zero/negative sentence counts) used to crash the program. Added validation loops that catch these and re-prompt instead, plus a warning when the requested sentence count exceeds what an article actually has.
 
 ## Extractive vs. AI: what I actually noticed
 
@@ -61,7 +62,6 @@ Running both on the same article side by side, the difference is obvious: my ext
 
 ## Ideas for later
 
-- Input validation on the method/sentence count prompts (currently assumes valid input)
 - Let the user pick the AI model instead of hardcoding one
 - A simple web interface instead of command-line prompts
 
