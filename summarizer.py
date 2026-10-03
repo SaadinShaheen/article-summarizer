@@ -92,14 +92,16 @@ while True:
     print("2. AI (Groq)")
     print("3. Both (compare side by side)")
     choice = input("Enter 1, 2, or 3: ")
+    # Input validation for choice
     if choice in ("1", "2", "3"):
         break
     print("Please enter 1, 2, or 3.")
 
-while True:
+while True: 
     try:
         n = int(input("How many sentences per summary? "))
-        if n > 0:
+        # Input validation for sentence count
+        if n > 0:             
             break
         print("Please enter a number greater than 0.\n")
     except ValueError:
@@ -111,7 +113,13 @@ for filename in files:
     path = os.path.join(folder, filename) # os.path.join() is used to combine folder and file names into a proper file path
     with open(path, "r", encoding="utf-8") as f:
         text = f.read()
+    
     if choice in ("1","3"):
+        
+        total_sentences = len(text.replace("\n", " ").split(". "))
+        if n > total_sentences:     # Checks if n exceeds total sentences in the article
+            print(f"Note: {filename} only has {total_sentences} sentences - using all of them instead of {n}.")
+        
         summary, original_count, summary_count = summarize(text, n)
         compression = round((summary_count/original_count) * 100, 1)
 
