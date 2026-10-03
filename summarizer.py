@@ -82,3 +82,12 @@ for filename in files:
     print("="*50)
     print(f"Original: {original_count} words | Summary: {summary_count} words | Compressed to {compression}% of original")
     print("="*50)
+
+    output_text = f"Original: {original_count} words | Summary: {summary_count} words | Compressed to {compression}% of original\n\n"
+    output_text += textwrap.fill(summary, width=70)
+
+    output_name = filename.replace(".txt", "_summary.txt") # Create the summary filename (e.g. for trees.txt -> trees_summary.txt)
+    output_path = os.path.join("summaries", output_name) # Create the full path inside the summaries folder (e.g. summaries\trees_summary.txt)
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(output_text)
