@@ -66,4 +66,11 @@ print("="*50)
 # Compression stats
 summary_word_count = len(summary_para.split())
 compression = (summary_word_count / len(words)) * 100
-print(f"Original: {len(words)} words | Summary: {summary_word_count} words | Compressed to {round(compression,1)}%")
+
+# Writing to a file
+output_text = f"Original: {len(words)} words | Summary: {summary_word_count} words | Compressed to {round(compression,1)}%\n\n"
+output_text += textwrap.fill(summary_para, width=70)
+
+with open("summary_output.txt", "w", encoding="utf-8") as f:
+    f.write(output_text)
+print("\nSummary saved to summary_output.txt")
