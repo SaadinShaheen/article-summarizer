@@ -86,13 +86,25 @@ files = [f for f in os.listdir(folder) if f.endswith(".txt")] # Get all .txt fil
 if not files:
     print("No .txt files found in the articles folder")
 
-print("\nChoose a summarization method:")
-print("1. Extractive")
-print("2. AI (Groq)")
-print("3. Both (compare side by side)")
-choice = input("Enter 1, 2, or 3: ")
+while True:
+    print("\nChoose a summarization method:")
+    print("1. Extractive")
+    print("2. AI (Groq)")
+    print("3. Both (compare side by side)")
+    choice = input("Enter 1, 2, or 3: ")
+    if choice in ("1", "2", "3"):
+        break
+    print("Please enter 1, 2, or 3.")
 
-n = int(input("How many sentences per summary? "))
+while True:
+    try:
+        n = int(input("How many sentences per summary? "))
+        if n > 0:
+            break
+        print("Please enter a number greater than 0.\n")
+    except ValueError:
+        print("That's not a valid number. Try again.\n")
+
 
 for filename in files:
 
