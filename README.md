@@ -1,51 +1,70 @@
 # Article Summarizer
 
-A simple extractive text summarizer written in Python. Give it an article, and it picks out the most important sentences to generate a short summary - no external APIs or machine learning models, just frequency based scoring built from scratch.
+A Python tool that summarizes articles two different ways: a frequency based extractive algorithm I built from scratch, and a real LLM (via Groq's free API) for comparison. Point it at a folder of articles, pick a method, and it saves a summary file for each one.
 
 ## How it works
 
-1. **Read the article** from a `.txt` file
-2. **Split it into sentences** (on `". "`, after normalizing paragraph breaks)
-3. **Count word frequency** across the whole article, ignoring common stopwords ("the", "a", "and" etc.) so the scoring reflects meaningful content rather than filler
-4. **Score each sentence** by the average frequency of its words - this rewards sentences that are dense with important terms, rather than just long sentences that repeat common words
-5. **Return the top-N highest scoring sentences**, in their original order, as the summary
+**Extractive method:**
+1. Read each article from a `.txt` file
+2. Split it into sentences
+3. Count word frequency across the article, ignoring stopwords ("the", "a", "and", etc.)
+4. Score each sentence by the *average* frequency of its words (not the sum - see "Bugs I ran into" below for why that matters)
+5. Pick the top N highest scoring sentences, put them back in their original order, and join them into a paragraph
+6. The extractive method also reports a compression stat (e.g. "280 words -> 51 words")
 
-## Example
-
-```
-$ python summarizer.py
-
-Dreams can contain elements from everyday life
-During REM sleep, brain activity becomes more similar to waking activity, and vivid dreams are particularly common
-Interestingly, people do not always remember their dreams
-```
+**AI method:**
+Sends the full article to an LLM (currently `openai/gpt-oss-20b`, hosted free on Groq) with a prompt asking for an N sentence summary. This is *abstractive* - it generates new sentences rather than lifting them directly from the article.
 
 ## Usage
-
-1. Save the article you want to summarize as `myarticle.txt` in the same folder as `summarizer.py`
-2. Run the script:
+1. Clone the repo and install dependencies:
+   ```
+   pip install groq python-dotenv
+   ```
+2. Get a free API key from [console.groq.com](https://console.groq.com) and create a `.env` file in the project folder:
+   ```
+   GROQ_API_KEY=your_key_here
+   ```
+3. Drop `.txt` articles into the `articles/` folder
+4. Run it:
    ```
    python summarizer.py
    ```
-3. The top 3 sentences print to the terminal as the summary
+5. Choose a method (extractive, AI, both) and how many sentences you want
+6. Check the `summaries/` folder - each article gets its own output file(s), named like `bees_extractive.txt` and `bees_ai.txt`
 
-## What I learned building this
+## Project structure
 
-This was a hands-on refresher project after some time away from coding, so a few things stood out while building it:
+```
+article-summarizer/
+├── summarizer.py
+├── .env              (not tracked - holds your API key)
+├── .gitignore
+├── articles/          (input articles go here)       
+├── summaries/         (generated output, not tracked)
+└── README.md
+```
 
-- **Length bias in naive scoring**: summing word frequencies per sentence unfairly favors longer sentences. Switching to an *average* score per word fixed this.
-- **Punctuation fragmenting word counts**:`"python"` and `"python."` were initially counted as different words until stripping punctuation before counting.
-- **Paragraph breaks merging sentences**: splitting on `". "` alone missed sentence boundaries across paragraph breaks (`".\n\n"`), which required normalizing newlines first.
-- **File encoding matters**: reading a `.txt` file without specifying `encoding="utf-8"` corrupted special characters like em-dashes in the source text.
-- **Stopwords meaningfully change results**: filtering out filler words didn't just clean up the word frequency dictionary - it changed which sentences actually ranked highest, since short, content dense sentences could now compete fairly against longer ones padded with common words.
+## Bugs I ran into (and what I learned from them)
 
-## Possible next steps
+This project started as a Python refresher after some time away from coding, so almost every bug here taught me something concrete:
 
-- Let the user choose the number of summary sentences
-- Accept pasted input directly, not just `.txt` files
-- Compare against an AI-generated summary (via an LLM API) as a stretch goal
-- Handle sentence splitting edge cases like abbreviations ("U.S.", "e.g.") more robustly
+- **Length bias in scoring**: summing word frequencies per sentence unfairly favored long sentences. Switched to an *average* score per word instead.
+- **Punctuation fragmenting word counts**: `"python"` and `"python."` were counted as separate words until I stripped punctuation before counting.
+- **Paragraph breaks silently merging sentences**: splitting on `". "` missed boundaries across paragraph breaks (`".\n\n"`), so I normalized newlines to spaces first.
+- **File encoding corrupting special characters**: reading without `encoding="utf-8"` mangled em-dashes in the source text.
+- **Stopword filtering changed which sentences got picked**, not just the word frequency dictionary; short, content-dense sentences could finally compete fairly against longer ones padded with filler words.
+- **Accidentally exposed an API key once** by pasting terminal output that included it. Revoked it immediately and regenerated; a good reminder that `.gitignore` -ing `.env` protects against *committing* a key, but not against pasting it somewhere by accident.
 
-## Tech
+## Extractive vs. AI: what I actually noticed
 
-Pure Python standard library only (`string`, no third-party dependencies for the core version).
+Running both on the same article side by side, the difference is obvious: my extractive version pulls real sentences verbatim, so it's faithful to the original wording but can read a little disjointed since the sentences weren't written to flow into each other. The AI version paraphrases and adds transitions, so it reads more smoothly, but it's no longer the article's exact words. Neither is strictly better - they're genuinely different tools depending on whether you need exact original phrasing or just the gist of it.
+
+## Ideas for later
+
+- Input validation on the method/sentence count prompts (currently assumes valid input)
+- Let the user pick the AI model instead of hardcoding one
+- A simple web interface instead of command-line prompts
+
+## Built with
+
+Python standard library (`string`,`os`,`textwrap`) plus `groq` and `python-dotenv` for the AI summary feature.
