@@ -8,16 +8,27 @@ load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 stopwords = {"the", "a", "an", "and", "or", 
-             "but", "is", "are", "was", "were", 
-             "to", "of", "in", "on","at", "for", 
-             "with", "this", "that", "it", "as", 
-             "by","have", "has", "do", "does"}
+              "but", "is", "are", "was", "were", 
+              "to", "of", "in", "on","at", "for", 
+              "with", "this", "that", "it", "as", 
+              "by","have", "has", "do", "does"}
 
 def add_period(s):
     s = s.strip()
     if s and s[-1] not in ".!?":
         s += "."
     return s
+
+def ai_summarize(article_text, n):
+    response = client.chat.completions.create( # Send the article to the Groq AI model
+        model="openai/gpt-oss-20b",     # Choose the AI model to use
+        messages=[
+            {"role": "user",    # Identify this as a user request
+             "content": f"Summarize this article in {n} sentences:\n\n{article_text}"} # Give the AI the instruction and article
+        ]
+    )
+    return response.choices[0].message.content # return the AI generated summary
+
 
 def summarize(article_text, n):
     cleaned=article_text.replace("\n", " ")
@@ -69,43 +80,44 @@ def summarize(article_text, n):
     summary_word_count = len(summary_para.split())
     return summary_para, len(words), summary_word_count
 
+
 folder = "articles"
 files = [f for f in os.listdir(folder) if f.endswith(".txt")] # Get all .txt files from the folder
 if not files:
     print("No .txt files found in the articles folder")
+
+print("\nChoose a summarization method:")
+print("1. Extractive")
+print("2. AI (Groq)")
+print("3. Both (compare side by side)")
+choice = input("Enter 1, 2, or 3: ")
+
 n = int(input("How many sentences per summary? "))
 
 for filename in files:
+
     path = os.path.join(folder, filename) # os.path.join() is used to combine folder and file names into a proper file path
     with open(path, "r", encoding="utf-8") as f:
         text = f.read()
+    if choice in ("1","3"):
+        summary, original_count, summary_count = summarize(text, n)
+        compression = round((summary_count/original_count) * 100, 1)
 
-    summary, original_count, summary_count = summarize(text, n)
-    compression = round((summary_count/original_count) * 100, 1)
+        output_text = f"Original: {original_count} words | Summary: {summary_count} words | Compressed to {compression}% of original\n\n"
+        output_text += textwrap.fill(summary, width=70) # textwrap.fill() breaks the text into lines and returns it as one string, The width parameter specifies the maximum line length
 
-    print(f"\n--- {filename} ---")
-    print(textwrap.fill(summary, width=70)) # textwrap.fill() breaks the text into lines and returns it as one string, The width parameter specifies the maximum line length
-    print("="*50)
-    print(f"Original: {original_count} words | Summary: {summary_count} words | Compressed to {compression}% of original")
-    print("="*50)
+        output_name = filename.replace(".txt", "_extractive.txt") # Create the extractive summary filename (e.g. for trees.txt -> trees_extractive.txt)
+        output_path = os.path.join("summaries", output_name) # Create the full path inside the summaries folder (e.g. summaries\trees_summary.txt)
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(output_text)
+        print(f"Saved extractive summary: {output_path}\n")
 
-    output_text = f"Original: {original_count} words | Summary: {summary_count} words | Compressed to {compression}% of original\n\n"
-    output_text += textwrap.fill(summary, width=70)
+    if choice in ("2","3"):
+        ai_summary = ai_summarize(text, n)
 
-    output_name = filename.replace(".txt", "_summary.txt") # Create the summary filename (e.g. for trees.txt -> trees_summary.txt)
-    output_path = os.path.join("summaries", output_name) # Create the full path inside the summaries folder (e.g. summaries\trees_summary.txt)
-
-    with open(output_path, "w", encoding="utf-8") as f:
-        f.write(output_text)
-
-# API TEST
-with open("articles/dreams.txt", "r", encoding="utf-8") as f:
-    test_article = f.read()
-response = client.chat.completions.create( # Send the article to the Groq AI model
-    model="openai/gpt-oss-20b",    # Choose the AI model to use
-    messages=[
-        {"role": "user",    # Identify this as a user request
-        "content": f"Summarize this article in 3 sentences:\n\n{test_article}"} # Give the AI the instruction and article
-    ]
-)
-print(response.choices[0].message.content) # Print the AI generated summary
+        output_name = filename.replace(".txt", "_ai.txt")
+        output_path = os.path.join("summaries", output_name)
+        wrapped_ai_summary = textwrap.fill(ai_summary, width=70)
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(wrapped_ai_summary)
+        print(f"Saved AI summary: {output_path}\n")
