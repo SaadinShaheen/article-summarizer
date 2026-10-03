@@ -62,3 +62,8 @@ print("="*50)
 print(textwrap.fill(summary_para, width=70))
  # textwrap.fill() breaks the text into lines and returns it as one string, The width parameter specifies the maximum line length
 print("="*50)
+
+# Compression stats
+summary_word_count = len(summary_para.split())
+compression = (summary_word_count / len(words)) * 100
+print(f"Original: {len(words)} words | Summary: {summary_word_count} words | Compressed to {round(compression,1)}%")
