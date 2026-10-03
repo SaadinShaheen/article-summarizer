@@ -1,6 +1,11 @@
-import string
+from dotenv import load_dotenv # Import load_dotenv to read variables from the .env file
+from groq import Groq # Import Groq to connect Python to the Groq AI API
+import string 
 import textwrap # textwrap is used to format and wrap text mainly by controlling how long each line can be
 import os # os module lets your program interact with the operating system (like files, folders, paths and environment variables)
+
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 stopwords = {"the", "a", "an", "and", "or", 
              "but", "is", "are", "was", "were", 
@@ -13,6 +18,7 @@ def add_period(s):
     if s and s[-1] not in ".!?":
         s += "."
     return s
+
 def summarize(article_text, n):
     cleaned=article_text.replace("\n", " ")
      # replaces newline characters with spaces
@@ -91,3 +97,15 @@ for filename in files:
 
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(output_text)
+
+# API TEST
+with open("articles/dreams.txt", "r", encoding="utf-8") as f:
+    test_article = f.read()
+response = client.chat.completions.create( # Send the article to the Groq AI model
+    model="openai/gpt-oss-20b",    # Choose the AI model to use
+    messages=[
+        {"role": "user",    # Identify this as a user request
+        "content": f"Summarize this article in 3 sentences:\n\n{test_article}"} # Give the AI the instruction and article
+    ]
+)
+print(response.choices[0].message.content) # Print the AI generated summary
